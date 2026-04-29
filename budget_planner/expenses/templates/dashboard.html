@@ -1,0 +1,392 @@
+{% extends 'base.html' %}
+{% block title %}Smart Budget Tracker{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/simple-datatables@latest/dist/style.css" rel="stylesheet" type="text/css">
+<style>
+    .dashboard-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+        margin-top: 1rem;
+    }
+    
+    .filter-panel {
+        background: var(--glass-bg);
+        border: 1px solid var(--glass-border);
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 20px var(--shadow-color);
+        margin-bottom: 2rem;
+        display: flex;
+        gap: 1.0rem;
+        align-items: center;
+        flex-wrap: wrap;
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s ease;
+    }
+    
+    .filter-panel:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 30px var(--shadow-color);
+        border-color: var(--primary-color);
+    }
+    
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+    
+    .filter-group label {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+    }
+    
+    .filter-panel select.form-control, .filter-panel input.form-control {
+        width: 150px;
+        padding: 0.5rem;
+    }
+    
+    .card {
+        background: var(--glass-bg);
+        border: 1px solid var(--glass-border);
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 20px var(--shadow-color), inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 1px 0 0 rgba(255, 255, 255, 0.05);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s ease;
+    }
+    
+    .card:hover {
+        transform: translateY(-6px) scale(1.01);
+        box-shadow: 0 15px 35px var(--shadow-color);
+        border-color: var(--primary-color);
+    }
+    
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 1rem;
+    }
+    
+    .card-header h2 {
+        margin: 0;
+        font-size: 1.25rem;
+        color: var(--text-primary);
+    }
+    
+    .table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .table th, .table td {
+        padding: 1rem;
+        text-align: left;
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .table th {
+        color: var(--text-secondary);
+        font-weight: 500;
+        text-transform: uppercase;
+        font-size: 0.8rem;
+        letter-spacing: 0.05em;
+    }
+    
+    .table tr {
+        transition: background-color 0.2s;
+    }
+    
+    .table tr:hover td {
+        background: var(--surface-hover);
+    }
+    
+    .chart-container {
+        margin-bottom: 2rem;
+        display: flex;
+        justify-content: center;
+    }
+    
+    .chart-container img {
+        width: auto;
+        height: auto;
+        max-width: 100%;
+        border-radius: 8px;
+        border: 1px solid var(--glass-border);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+    
+    .badge {
+        background: rgba(139, 92, 246, 0.1);
+        color: #6d28d9;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.85rem;
+    }
+    
+    .badge-income { background: rgba(16, 185, 129, 0.1); color: #059669; }
+    .badge-expense { background: rgba(239, 68, 68, 0.1); color: #dc2626; }
+    
+    .card-savings-positive { border-left: 4px solid #3b82f6; }
+    .card-savings-positive .savings-amount { color: #3b82f6; }
+    
+    .card-savings-negative { border-left: 4px solid #f59e0b; }
+    .card-savings-negative .savings-amount { color: #f59e0b; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Dynamic Filtering Form -->
+<form method="GET" action="{% url 'dashboard' %}" class="filter-panel animate-slide-up" id="filter-form" style="flex-direction: column; align-items: stretch;">
+    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+        <div style="font-weight: 500; color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem;">
+            <i data-lucide="filter"></i> Dataset Filters
+        </div>
+        <button type="button" class="btn btn-outline" onclick="toggleAdvancedFilters()" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.4rem 1rem;">
+            Advanced <i data-lucide="chevron-down" id="filter-toggle-icon"></i>
+        </button>
+    </div>
+    
+    <div id="advanced-filters" style="display: none; flex-wrap: wrap; gap: 1.0rem; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color);">
+        <div class="filter-group">
+            <label>Year</label>
+            <select name="year" class="form-control" onchange="document.getElementById('filter-form').submit()">
+                <option value="all">All</option>
+                {% for yr in years %}<option value="{{ yr }}" {% if selected_year == yr|stringformat:"i" %}selected{% endif %}>{{ yr }}</option>{% endfor %}
+            </select>
+        </div>
+        
+        <div class="filter-group">
+            <label>Date</label>
+            <select name="day" class="form-control" onchange="document.getElementById('filter-form').submit()">
+                <option value="all">All</option>
+                {% for d in days %}<option value="{{ d }}" {% if selected_day == d %}selected{% endif %}>{{ d }}</option>{% endfor %}
+            </select>
+        </div>
+
+        <div class="filter-group">
+            <label>Type</label>
+            <select name="type" class="form-control" onchange="document.getElementById('filter-form').submit()">
+                <option value="all">All</option>
+                {% for typ in types %}<option value="{{ typ }}" {% if selected_type == typ %}selected{% endif %}>{{ typ }}</option>{% endfor %}
+            </select>
+        </div>
+
+        <div class="filter-group">
+            <label>Category</label>
+            <select name="category" class="form-control" onchange="document.getElementById('filter-form').submit()">
+                <option value="all">All</option>
+                {% for cat in categories %}<option value="{{ cat }}" {% if selected_category == cat %}selected{% endif %}>{{ cat }}</option>{% endfor %}
+            </select>
+        </div>
+        
+        <div class="filter-group">
+            <label>Currency</label>
+            <select name="currency" class="form-control" onchange="document.getElementById('filter-form').submit()">
+                <option value="all">All</option>
+                {% for curr in currencies %}<option value="{{ curr }}" {% if selected_currency == curr %}selected{% endif %}>{{ curr }}</option>{% endfor %}
+            </select>
+        </div>
+
+        <div class="filter-group">
+            <label>Payment Method</label>
+            <select name="method" class="form-control" onchange="document.getElementById('filter-form').submit()">
+                <option value="all">All</option>
+                {% for m in methods %}<option value="{{ m }}" {% if selected_method == m %}selected{% endif %}>{{ m }}</option>{% endfor %}
+            </select>
+        </div>
+
+        <div class="filter-group">
+            <label>Status</label>
+            <select name="status" class="form-control" onchange="document.getElementById('filter-form').submit()">
+                <option value="all">All</option>
+                {% for s in statuses %}<option value="{{ s }}" {% if selected_status == s %}selected{% endif %}>{{ s }}</option>{% endfor %}
+            </select>
+        </div>
+        
+        <div class="filter-group">
+            <label>Min Amount</label>
+            <input type="number" name="amount_min" class="form-control" placeholder="Min" value="{{ amount_min|default:'' }}" onchange="document.getElementById('filter-form').submit()">
+        </div>
+        
+        <div class="filter-group">
+            <label>Max Amount</label>
+            <input type="number" name="amount_max" class="form-control" placeholder="Max" value="{{ amount_max|default:'' }}" onchange="document.getElementById('filter-form').submit()">
+        </div>
+
+        <div class="filter-group" style="padding-top: 1rem; margin-left: auto;">
+            <a href="{% url 'dashboard' %}" class="btn btn-outline" style="display: flex; align-items: center; gap: 0.5rem;"><i data-lucide="x-circle" style="width: 16px; height: 16px;"></i> Reset Filters</a>
+        </div>
+    </div>
+</form>
+
+<div class="dashboard-grid">
+    {% if has_data %}
+    <div style="display: flex; gap: 1.5rem; flex-wrap: wrap;" class="animate-slide-up delay-100">
+        <div class="card" style="flex: 1; min-width: 200px; text-align: center; border-left: 4px solid #10b981; padding: 1.5rem;">
+            <h3 style="color: var(--text-secondary); margin: 0 0 0.5rem 0; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em;">Total Income</h3>
+            <div style="font-size: 2rem; font-weight: bold; color: #10b981; display: flex; justify-content: center; align-items: center; gap: 0.5rem;"><i data-lucide="trending-up"></i>{{ total_income|floatformat:2 }}</div>
+        </div>
+        <div class="card" style="flex: 1; min-width: 200px; text-align: center; border-left: 4px solid #ef4444; padding: 1.5rem;">
+            <h3 style="color: var(--text-secondary); margin: 0 0 0.5rem 0; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em;">Total Expense</h3>
+            <div style="font-size: 2rem; font-weight: bold; color: #ef4444; display: flex; justify-content: center; align-items: center; gap: 0.5rem;"><i data-lucide="trending-down"></i>{{ total_expense|floatformat:2 }}</div>
+        </div>
+        <div class="card card-savings-{{ savings_status }}" style="flex: 1; min-width: 200px; text-align: center; padding: 1.5rem;">
+            <h3 style="color: var(--text-secondary); margin: 0 0 0.5rem 0; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em;">Net Savings</h3>
+            <div class="savings-amount" style="font-size: 2rem; font-weight: bold; display: flex; justify-content: center; align-items: center; gap: 0.5rem;"><i data-lucide="piggy-bank"></i>{{ savings|floatformat:2 }}</div>
+        </div>
+        <div class="card" style="flex: 1; min-width: 200px; text-align: center; border-left: 4px solid var(--primary-color); padding: 1.5rem;">
+            <h3 style="color: var(--text-secondary); margin: 0 0 0.5rem 0; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em;">Total Matches</h3>
+            <div style="font-size: 2rem; font-weight: bold; color: var(--primary-color); display: flex; justify-content: center; align-items: center; gap: 0.5rem;"><i data-lucide="activity"></i>{{ total_count }}</div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if line_chart %}
+    <div class="card animate-slide-up delay-200">
+        <div class="card-header"><h2>Expense & Income Trend (Monthly)</h2></div>
+        <div class="chart-container"><img src="{{ line_chart }}" alt="Line Chart" style="width: 100%;"></div>
+        {% if insights.line %}
+        <div style="margin-top: 1rem; padding: 1rem; background: var(--surface-hover); border-radius: 8px; color: var(--text-secondary); font-size: 0.95rem; border-left: 3px solid var(--accent-color); display: flex; align-items: flex-start; gap: 0.75rem;">
+            <i data-lucide="lightbulb" style="color: var(--accent-color); flex-shrink: 0; margin-top: 0.1rem;"></i>
+            <div><strong>Data Insight:</strong> {{ insights.line }}</div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% if pie_chart %}
+    <div class="card animate-slide-up delay-300">
+        <div class="card-header"><h2>Overall Split</h2></div>
+        <div class="chart-container" style="margin-bottom:0; width: 100%; display: block; overflow: hidden;">
+            {% if 'data:image' in pie_chart %}
+            <div style="display: flex; justify-content: center;"><img src="{{ pie_chart }}" alt="Pie Chart"></div>
+            {% else %}
+            {{ pie_chart|safe }}
+            {% endif %}
+        </div>
+        {% if insights.pie %}
+        <div style="margin-top: 1.5rem; padding: 1rem; background: var(--surface-hover); border-radius: 8px; color: var(--text-secondary); font-size: 0.95rem; border-left: 3px solid var(--accent-color); display: flex; align-items: flex-start; gap: 0.75rem;">
+            <i data-lucide="lightbulb" style="color: var(--accent-color); flex-shrink: 0; margin-top: 0.1rem;"></i>
+            <div><strong>Data Insight:</strong> {{ insights.pie }}</div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+    
+    {% if bar_chart %}
+    <div class="card animate-slide-up delay-400">
+        <div class="card-header"><h2>By Category</h2></div>
+        <div class="chart-container" style="margin-bottom:0;">
+            <img src="{{ bar_chart }}" alt="Bar Chart">
+        </div>
+        {% if insights.bar %}
+        <div style="margin-top: 1.5rem; padding: 1rem; background: var(--surface-hover); border-radius: 8px; color: var(--text-secondary); font-size: 0.95rem; border-left: 3px solid var(--accent-color); display: flex; align-items: flex-start; gap: 0.75rem;">
+            <i data-lucide="lightbulb" style="color: var(--accent-color); flex-shrink: 0; margin-top: 0.1rem;"></i>
+            <div><strong>Data Insight:</strong> {{ insights.bar }}</div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <div class="card animate-slide-up delay-500">
+        <div class="card-header">
+            <h2>Transactions Data Table {% if has_data %}(Showing {{ records|length }} matching transactions){% endif %}</h2>
+        </div>
+        
+        {% if has_data %}
+        <div style="overflow-x: auto;">
+            <table class="table" id="transactionsTable">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Type</th>
+                        <th>Category</th>
+                        <th>Description</th>
+                        <th>Amount</th>
+                        <th>Currency</th>
+                        <th>Payment Method</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in records %}
+                    <tr>
+                        <td style="white-space: nowrap;">{{ record.date }}</td>
+                        <td>
+                            <span class="badge {% if record.type == 'Income' %}badge-income{% else %}badge-expense{% endif %}">
+                                {{ record.type }}
+                            </span>
+                        </td>
+                        <td><span class="badge">{{ record.category }}</span></td>
+                        <td>
+                            {{ record.description }}
+                            {% if record.is_outlier %}
+                            <span class="badge" title="Statistically Unusual Amount" style="background: rgba(245, 158, 11, 0.3); color: #fbbf24; margin-left: 0.5rem; font-size: 0.70rem;">Outlier</span>
+                            {% endif %}
+                        </td>
+                        <td style="font-weight: 600; color: var(--text-primary);">{{ record.amount|floatformat:2 }}</td>
+                        <td>{{ record.currency }}</td>
+                        <td><span class="text-muted">{{ record.method }}</span></td>
+                        <td>
+                            {% if record.status == 'Completed' %}
+                            <span style="color: #059669;">{{ record.status }}</span>
+                            {% else %}
+                            <span style="color: #dc2626;">{{ record.status }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center" style="padding: 3rem 1rem;">
+            <div style="display: flex; justify-content: center; margin-bottom: 1rem; color: var(--text-secondary); opacity: 0.5;"><i data-lucide="search-x" style="width: 64px; height: 64px;"></i></div>
+            <div style="color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 1.1rem;">No dataset transactions matching your filters found.</div>
+            <a href="{% url 'dashboard' %}" class="btn btn-outline" style="display: inline-flex; align-items: center; gap: 0.5rem;"><i data-lucide="refresh-cw"></i> Clear All Filters</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/simple-datatables@latest" type="text/javascript"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const table = document.getElementById("transactionsTable");
+        if (table) {
+            new simpleDatatables.DataTable(table, {
+                searchable: true,
+                fixedHeight: true,
+                perPage: 10,
+                classes: {
+                    input: "form-control",
+                    selector: "form-control"
+                }
+            });
+        }
+    });
+    
+    function toggleAdvancedFilters() {
+        const panel = document.getElementById('advanced-filters');
+        const icon = document.getElementById('filter-toggle-icon');
+        if (panel.style.display === 'none' || panel.style.display === '') {
+            panel.style.display = 'flex';
+            icon.setAttribute('data-lucide', 'chevron-up');
+        } else {
+            panel.style.display = 'none';
+            icon.setAttribute('data-lucide', 'chevron-down');
+        }
+        lucide.createIcons();
+    }
+</script>
+{% endblock %}

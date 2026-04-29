@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% block title %}Smart Budget Tracker{% endblock %}
+
+{% block content %}
+<div class="glass-panel animate-slide-up" style="max-width: 600px; margin: 0 auto;">
+    <h2 style="margin-top: 0;">{{ action }} Dataset Record</h2>
+    <form method="POST">
+        {% csrf_token %}
+        <div class="form-group">
+            <label class="form-label">Date</label>
+            <input type="date" name="date" class="form-control" value="{{ record.Date|default:'' }}" required>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Category</label>
+            <select name="category" class="form-control" required>
+                <option value="Food" {% if record.Category == 'Food' %}selected{% endif %}>Food</option>
+                <option value="Entertainment" {% if record.Category == 'Entertainment' %}selected{% endif %}>Entertainment</option>
+                <option value="Utilities" {% if record.Category == 'Utilities' %}selected{% endif %}>Utilities</option>
+                <option value="Transport" {% if record.Category == 'Transport' %}selected{% endif %}>Transport</option>
+                <option value="Others" {% if record.Category and record.Category != 'Food' and record.Category != 'Entertainment' and record.Category != 'Utilities' and record.Category != 'Transport' %}selected{% elif not record.Category %}selected{% endif %}>Others</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Description</label>
+            <input type="text" name="description" class="form-control" value="{{ record.Description|default:'' }}" required>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Amount</label>
+            <input type="number" step="0.01" name="amount" class="form-control" value="{{ record.Amount|default:'' }}" required>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Type</label>
+            <select name="type" class="form-control" required>
+                <option value="Expense" {% if record.Transaction_Type == 'Expense' %}selected{% endif %}>Expense</option>
+                <option value="Income" {% if record.Transaction_Type == 'Income' %}selected{% endif %}>Income</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Payment Method</label>
+            <input type="text" name="payment_method" class="form-control" value="{{ record.Payment_Method|default:'' }}" required>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Status</label>
+            <select name="status" class="form-control" required>
+                <option value="Completed" {% if record.Status == 'Completed' %}selected{% endif %}>Completed</option>
+                <option value="Pending" {% if record.Status == 'Pending' %}selected{% endif %}>Pending</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Currency</label>
+            <input type="text" name="currency" class="form-control" value="{{ record.Currency|default:'USD' }}" required>
+        </div>
+        
+        <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+            <button type="submit" class="btn" style="flex: 1;">Save Record</button>
+            <a href="{% url 'dataset_list' %}" class="btn btn-outline" style="flex: 1;">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

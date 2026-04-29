@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Smart Budget Tracker{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background-image: url('{% static "images/login_bg.jpg" %}') !important;
+        background-size: cover !important;
+        background-position: center !important;
+        background-repeat: no-repeat !important;
+        background-attachment: fixed !important;
+    }
+
+    .auth-container {
+        max-width: 450px;
+        margin: 6rem auto 4rem;
+        background: rgba(15, 23, 42, 0.45) !important;
+        backdrop-filter: blur(16px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+    }
+    .auth-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    .auth-header h1 {
+        font-size: 1.75rem;
+        margin: 0 0 0.5rem 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-container glass-panel animate-slide-up">
+    <div class="auth-header">
+        <h1>Create Account</h1>
+        <p class="text-muted">Start tracking your expenses intelligently</p>
+    </div>
+    
+    <form method="POST">
+        {% csrf_token %}
+        <div class="form-group">
+            <label class="form-label" for="name">Full Name</label>
+            <input type="text" id="name" name="name" class="form-control" required placeholder="John Doe">
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label" for="email">Email Address</label>
+            <input type="email" id="email" name="email" class="form-control" required placeholder="you@example.com">
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label" for="password">Password</label>
+            <input type="password" id="password" name="password" class="form-control" required placeholder="Create a strong password">
+        </div>
+        
+        <button type="submit" class="btn" style="width: 100%; margin-top: 1rem;">Sign Up</button>
+    </form>
+    
+    <div class="text-center mt-4 text-muted">
+        Already have an account? <a href="{% url 'login' %}" style="color: var(--accent-color); text-decoration: none;">Sign in</a>
+    </div>
+</div>
+{% endblock %}

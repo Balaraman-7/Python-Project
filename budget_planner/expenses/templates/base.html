@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% load static %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Smart Budget Tracker{% endblock %}</title>
+    <link rel="icon" href="{% static 'images/logo.png' %}" type="image/png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            /* Dark Theme */
+            --bg-color: #0f172a;
+            --surface-color: #1e293b;
+            --surface-hover: #334155;
+            --primary-color: #a78bfa;
+            --primary-hover: #c4b5fd;
+            --accent-color: #38bdf8;
+            --danger-color: #ff6b9d;
+            --success-color: #10b981;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --border-color: #334155;
+            --glass-bg: rgba(15, 23, 42, 0.80);
+            --glass-border: rgba(167, 139, 250, 0.12);
+            --shadow-color: rgba(0, 0, 0, 0.3);
+            --bg-gradient-1: rgba(167, 139, 250, 0.06);
+            --bg-gradient-2: rgba(56, 189, 248, 0.06);
+        }
+
+        :root.light-theme {
+            --bg-color: #f8fafc;
+            --surface-color: #ffffff;
+            --surface-hover: #f1f5f9;
+            --primary-color: #8b5cf6;
+            --primary-hover: #7c3aed;
+            --accent-color: #0284c7;
+            --danger-color: #e11d48;
+            --success-color: #059669;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --border-color: #e2e8f0;
+            --glass-bg: rgba(255, 255, 255, 0.80);
+            --glass-border: rgba(139, 92, 246, 0.2);
+            --shadow-color: rgba(0, 0, 0, 0.05);
+            --bg-gradient-1: rgba(139, 92, 246, 0.08);
+            --bg-gradient-2: rgba(2, 132, 199, 0.08);
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(circle at top right, var(--bg-gradient-1), transparent 40%),
+                              radial-gradient(circle at bottom left, var(--bg-gradient-2), transparent 40%);
+            background-attachment: fixed;
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            transition: background-color 0.4s ease, color 0.4s ease;
+        }
+
+        nav {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--glass-border);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            box-shadow: 0 4px 20px var(--shadow-color);
+            transition: all 0.3s ease;
+        }
+
+        .logo {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: transform 0.3s ease;
+        }
+        
+        .logo:hover {
+            transform: scale(1.05);
+        }
+
+        .logo span {
+            color: var(--primary-color);
+        }
+
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            margin-left: 1.5rem;
+            font-weight: 500;
+            position: relative;
+            transition: color 0.3s ease;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: -4px;
+            left: 0;
+            background-color: var(--primary-color);
+            transition: width 0.3s ease;
+            border-radius: 2px;
+        }
+
+        .nav-links a:hover::after, .nav-links a.active::after {
+            width: 100%;
+        }
+
+        .nav-links a:hover, .nav-links a.active {
+            color: var(--text-primary);
+        }
+
+        .container {
+            flex: 1;
+            padding: 2.5rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .messages {
+            margin-bottom: 1.5rem;
+        }
+
+        .alert {
+            padding: 1rem 1.25rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-weight: 500;
+            backdrop-filter: blur(8px);
+            animation: slideDown 0.4s ease-out forwards;
+            border-left: 4px solid transparent;
+        }
+
+        .alert-success {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success-color);
+            border-left-color: var(--success-color);
+        }
+
+        .alert-error {
+            background: rgba(225, 29, 72, 0.1);
+            color: var(--danger-color);
+            border-left-color: var(--danger-color);
+        }
+
+        .btn {
+            display: inline-block;
+            background: var(--primary-color);
+            color: #ffffff;
+            padding: 0.6rem 1.4rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-align: center;
+        }
+
+        .btn:hover {
+            background: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(124, 58, 237, 0.3);
+            color: #ffffff;
+        }
+
+        .btn-danger { background: var(--danger-color); }
+        .btn-danger:hover { background: #be123c; box-shadow: 0 6px 15px rgba(225, 29, 72, 0.3); }
+
+        .btn-outline {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+        
+        .btn-outline:hover {
+            background: var(--surface-hover);
+            border-color: var(--text-secondary);
+            box-shadow: 0 4px 10px var(--shadow-color);
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-family: inherit;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15);
+            background: var(--surface-color);
+        }
+
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 2.5rem;
+            box-shadow: 0 10px 40px var(--shadow-color), inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 1px 0 0 rgba(255, 255, 255, 0.05);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        /* Utils */
+        .text-center { text-align: center; }
+        .mt-4 { margin-top: 1rem; }
+        .mb-4 { margin-bottom: 1rem; }
+        .text-muted { color: var(--text-secondary); font-size: 0.9rem; }
+        .text-glow { text-shadow: 0 0 12px rgba(124, 58, 237, 0.5); }
+        
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .animate-fade-in { animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .animate-slide-up { animation: slideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; }
+        
+        /* Staggered transition delays */
+        .delay-100 { animation-delay: 0.1s; }
+        .delay-200 { animation-delay: 0.2s; }
+        .delay-300 { animation-delay: 0.3s; }
+        .delay-400 { animation-delay: 0.4s; }
+        .delay-500 { animation-delay: 0.5s; }
+
+        .btn-icon {
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            cursor: pointer;
+            padding: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background 0.3s ease;
+        }
+        .btn-icon:hover {
+            background: var(--surface-hover);
+        }
+
+        /* Custom Purple Arrow Cursor - NukePC Style */
+        @media (pointer: fine) {
+            * {
+                cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cpath d='M4 4 L24 16 L4 28 Z' fill='%23a78bfa' stroke='none'/%3E%3C/svg%3E") 0 0, auto !important;
+            }
+            a, button, input[type='button'], input[type='submit'], input[type='checkbox'], input[type='radio'], select, textarea, [role='button'], .btn, .card, .glass-panel {
+                cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cpath d='M4 4 L24 16 L4 28 Z' fill='%23c4b5fd' stroke='none'/%3E%3C/svg%3E") 0 0, pointer !important;
+            }
+            input[type='text'], input[type='email'], input[type='password'], input[type='search'], textarea {
+                cursor: text !important;
+            }
+        }
+
+        /* Ensure cursor shows on all interactive elements */
+        * {
+            cursor: inherit;
+        }
+
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <nav>
+        <a href="{% if request.session.user_email %}{% url 'dashboard' %}{% else %}{% url 'login' %}{% endif %}" class="logo">
+            <i data-lucide="wallet" style="color:var(--primary-color)"></i>
+            Smart Budget <span>Tracker</span>
+        </a>
+        <div class="nav-links" style="display: flex; align-items: center;">
+            <button id="theme-toggle" class="btn-icon" aria-label="Toggle Theme" style="margin-right: 0.5rem;">
+                <i data-lucide="sun" id="theme-icon"></i>
+            </button>
+
+
+            {% if request.session.user_email %}
+                <span class="text-muted" style="margin-right: 1rem;">Hello, {{ request.session.user_name }}</span>
+                <a href="{% url 'dashboard' %}">Dashboard</a>
+                <a href="{% url 'logout' %}" style="color: var(--danger-color)">Logout</a>
+            {% else %}
+                <a href="{% url 'login' %}">Login</a>
+                <a href="{% url 'register' %}" class="btn">Register</a>
+            {% endif %}
+        </div>
+    </nav>
+
+    <div class="container">
+        {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                    <div class="alert alert-{% if message.tags %}{{ message.tags }}{% else %}info{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </div>
+
+    <script>
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        // Theme Toggle Logic
+        const themeToggleBtn = document.getElementById('theme-toggle');
+        const themeIcon = document.getElementById('theme-icon');
+        
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'light') {
+            document.documentElement.classList.add('light-theme');
+            themeIcon.setAttribute('data-lucide', 'moon');
+        } else if (savedTheme === 'dark') {
+            themeIcon.setAttribute('data-lucide', 'sun');
+        } else {
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+                document.documentElement.classList.add('light-theme');
+                themeIcon.setAttribute('data-lucide', 'moon');
+            }
+        }
+        
+        if(themeToggleBtn) {
+            themeToggleBtn.addEventListener('click', () => {
+                document.documentElement.classList.toggle('light-theme');
+                
+                if (document.documentElement.classList.contains('light-theme')) {
+                    localStorage.setItem('theme', 'light');
+                    themeIcon.setAttribute('data-lucide', 'moon');
+                } else {
+                    localStorage.setItem('theme', 'dark');
+                    themeIcon.setAttribute('data-lucide', 'sun');
+                }
+                lucide.createIcons();
+            });
+        }
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
