@@ -87,5 +87,6 @@ STATICFILES_DIRS = [
     BASE_DIR / "expenses" / "static",
 ]
 
-# WhiteNoise compression and caching for production static files
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# WhiteNoise: serve static files directly from STATICFILES_DIRS
+# without needing collectstatic (Vercel has a read-only filesystem)
+WHITENOISE_USE_FINDERS = True
