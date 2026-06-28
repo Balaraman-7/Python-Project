@@ -3,11 +3,19 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-insecure-dummy-key-for-budget-planner'
+SECRET_KEY = os.environ.get(
+    'DJANGO_SECRET_KEY',
+    'django-insecure-dummy-key-for-budget-planner'
+)
 
-DEBUG = True
+DEBUG = os.environ.get('DJANGO_DEBUG', 'False').lower() in ('true', '1', 'yes')
 
 ALLOWED_HOSTS = ["*"]
+
+# Trust Vercel domains for CSRF
+CSRF_TRUSTED_ORIGINS = [
+    'https://*.vercel.app',
+]
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -57,6 +65,10 @@ DATABASES = {
     }
 }
 
+# Use cookie-based sessions so we don't need SQLite writes on Vercel
+# (Vercel has a read-only filesystem for serverless functions)
+SESSION_ENGINE = 'django.contrib.sessions.backends.signed_cookies'
+
 AUTH_PASSWORD_VALIDATORS = []
 
 LANGUAGE_CODE = 'en-us'
@@ -75,3 +87,5 @@ STATICFILES_DIRS = [
     BASE_DIR / "expenses" / "static",
 ]
 
+# WhiteNoise compression and caching for production static files
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'

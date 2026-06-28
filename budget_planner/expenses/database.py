@@ -1,3 +1,5 @@
+import os
+
 import pymongo
 from pymongo.errors import ConnectionFailure
 
@@ -9,10 +11,15 @@ class DatabaseManager:
         if cls._instance is None:
             cls._instance = super().__new__(cls)
             try:
-                # Assuming MongoDB connection does not require auth locally
+                # Use MONGODB_URI env var for production (MongoDB Atlas),
+                # fall back to localhost for local development.
+                mongo_uri = os.environ.get(
+                    'MONGODB_URI',
+                    'mongodb://localhost:27017/'
+                )
                 cls._instance.client = pymongo.MongoClient(
-                    'mongodb://localhost:27017/',
-                    serverSelectionTimeoutMS=2000
+                    mongo_uri,
+                    serverSelectionTimeoutMS=5000
                 )
                 cls._instance.client.admin.command('ping')
                 cls._instance.db = cls._instance.client['budget_db']
