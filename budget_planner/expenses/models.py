@@ -2,7 +2,7 @@ from expenses.database import DatabaseManager
 from django.contrib.auth.hashers import make_password, check_password
 from bson.objectid import ObjectId
 from datetime import datetime
-
+#structure and behaviour 
 
 class UserModel:
     def __init__(self):
@@ -52,12 +52,6 @@ class RecordModel:
                 del r['_id']
         return records
 
-    def add_record(self, record_data):
-        if self.collection is None:
-            return False
-        self.collection.insert_one(record_data)
-        return True
-
     def get_record_by_tid(self, transaction_id):
         if self.collection is None:
             return None
@@ -65,19 +59,3 @@ class RecordModel:
         if record and '_id' in record:
             del record['_id']
         return record
-
-    def update_record_by_tid(self, transaction_id, data):
-        if self.collection is None:
-            return False
-        if "Amount" in data:
-            data["Amount"] = float(data["Amount"])
-        self.collection.update_one(
-            {"Transaction_ID": transaction_id}, {"$set": data})
-        return True
-
-    def delete_record_by_tid(self, transaction_id):
-        if self.collection is None:
-            return False
-        self.collection.delete_one({"Transaction_ID": transaction_id})
-        return True
-
