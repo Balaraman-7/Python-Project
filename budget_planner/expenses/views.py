@@ -19,6 +19,12 @@ def check_auth(request):
     return 'user_email' in request.session
 
 
+def home_view(request):
+    if check_auth(request):
+        return redirect('dashboard')
+    return render(request, 'base.html')
+
+
 def login_view(request):
     if check_auth(request):
         return redirect('dashboard')
