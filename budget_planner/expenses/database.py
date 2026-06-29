@@ -12,11 +12,6 @@ ATLAS_DEFAULT_URI = (
     "budget_planner?retryWrites=true&w=majority&appName=Cluster0"
 )
 
-# Force Google's public DNS to resolve MongoDB SRV records
-# (fixes mobile hotspot / corporate DNS that blocks SRV lookups)
-dns.resolver.default_resolver = dns.resolver.Resolver(configure=False)
-dns.resolver.default_resolver.nameservers = ['8.8.8.8', '8.8.4.4', '1.1.1.1']
-
 
 class DatabaseManager:
     _instance = None
@@ -29,6 +24,10 @@ class DatabaseManager:
         if cls._instance is None:
             cls._instance = super().__new__(cls)
             try:
+                # Override DNS to use Google's public DNS (fixes restrictive networks/mobile hotspots)
+                dns.resolver.default_resolver = dns.resolver.Resolver(configure=False)
+                dns.resolver.default_resolver.nameservers = ['8.8.8.8', '8.8.4.4', '1.1.1.1']
+
                 # Use MONGODB_URI env var if set, otherwise use Atlas default
                 mongo_uri = os.environ.get('MONGODB_URI', ATLAS_DEFAULT_URI)
                 cls._instance.client = pymongo.MongoClient(
