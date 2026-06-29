@@ -291,28 +291,65 @@
             background: var(--surface-hover);
         }
 
-        /* Custom Purple Arrow Cursor - NukePC Style */
+        /* ── NukePC-style Dual-Ring Follower Cursor ── */
         @media (pointer: fine) {
-            * {
-                cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cpath d='M4 4 L24 16 L4 28 Z' fill='%23a78bfa' stroke='none'/%3E%3C/svg%3E") 0 0, auto !important;
-            }
-            a, button, input[type='button'], input[type='submit'], input[type='checkbox'], input[type='radio'], select, textarea, [role='button'], .btn, .card, .glass-panel {
-                cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cpath d='M4 4 L24 16 L4 28 Z' fill='%23c4b5fd' stroke='none'/%3E%3C/svg%3E") 0 0, pointer !important;
-            }
-            input[type='text'], input[type='email'], input[type='password'], input[type='search'], textarea {
-                cursor: text !important;
-            }
+            *, *::before, *::after { cursor: none !important; }
         }
 
-        /* Ensure cursor shows on all interactive elements */
-        * {
-            cursor: inherit;
+        /* Cursor dot */
+        #cursor-dot {
+            position: fixed;
+            top: 0; left: 0;
+            width: 8px; height: 8px;
+            background: var(--primary-color);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 99999;
+            transform: translate(-50%, -50%);
+            transition: width 0.2s ease, height 0.2s ease, background 0.2s ease;
+            box-shadow: 0 0 8px var(--primary-color);
+        }
+
+        /* Cursor ring */
+        #cursor-ring {
+            position: fixed;
+            top: 0; left: 0;
+            width: 36px; height: 36px;
+            border: 2px solid var(--primary-color);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 99998;
+            transform: translate(-50%, -50%);
+            transition: width 0.3s ease, height 0.3s ease, border-color 0.3s ease, opacity 0.3s ease;
+            opacity: 0.55;
+        }
+
+        /* Hover state — ring grows & glows, dot shrinks */
+        body.cursor-hover #cursor-ring {
+            width: 56px; height: 56px;
+            border-color: var(--primary-hover);
+            opacity: 0.85;
+            box-shadow: 0 0 18px rgba(167,139,250,0.35);
+        }
+        body.cursor-hover #cursor-dot {
+            width: 5px; height: 5px;
+            background: var(--primary-hover);
+        }
+
+        /* Click burst */
+        body.cursor-click #cursor-ring {
+            width: 22px; height: 22px;
+            opacity: 1;
+            border-color: #fff;
         }
 
     </style>
     {% block extra_css %}{% endblock %}
 </head>
 <body>
+    <!-- NukePC-style custom cursor elements -->
+    <div id="cursor-dot"></div>
+    <div id="cursor-ring"></div>
     <nav>
         <a href="{% if request.session.user_email %}{% url 'dashboard' %}{% else %}{% url 'login' %}{% endif %}" class="logo">
             <i data-lucide="wallet" style="color:var(--primary-color)"></i>
@@ -350,6 +387,56 @@
     </div>
 
     <script>
+        // ── NukePC-style Dual-Ring Follower Cursor ──
+        (function() {
+            const dot  = document.getElementById('cursor-dot');
+            const ring = document.getElementById('cursor-ring');
+            if (!dot || !ring) return;
+
+            let mouseX = 0, mouseY = 0;
+            let ringX  = 0, ringY  = 0;
+            let rafId;
+
+            // Track exact mouse for dot
+            document.addEventListener('mousemove', e => {
+                mouseX = e.clientX;
+                mouseY = e.clientY;
+                dot.style.left = mouseX + 'px';
+                dot.style.top  = mouseY + 'px';
+            });
+
+            // Smooth lag for ring
+            function animateRing() {
+                ringX += (mouseX - ringX) * 0.12;
+                ringY += (mouseY - ringY) * 0.12;
+                ring.style.left = ringX + 'px';
+                ring.style.top  = ringY + 'px';
+                rafId = requestAnimationFrame(animateRing);
+            }
+            animateRing();
+
+            // Show/hide on enter/leave window
+            document.addEventListener('mouseleave', () => {
+                dot.style.opacity  = '0';
+                ring.style.opacity = '0';
+            });
+            document.addEventListener('mouseenter', () => {
+                dot.style.opacity  = '1';
+                ring.style.opacity = '';
+            });
+
+            // Hover state on interactive elements
+            const hoverTargets = 'a, button, input, select, textarea, [role="button"], label, .btn, .card, .glass-panel, th, td';
+            document.querySelectorAll(hoverTargets).forEach(el => {
+                el.addEventListener('mouseenter', () => document.body.classList.add('cursor-hover'));
+                el.addEventListener('mouseleave', () => document.body.classList.remove('cursor-hover'));
+            });
+
+            // Click burst
+            document.addEventListener('mousedown', () => document.body.classList.add('cursor-click'));
+            document.addEventListener('mouseup',   () => document.body.classList.remove('cursor-click'));
+        })();
+
         // Initialize Lucide Icons
         lucide.createIcons();
 
